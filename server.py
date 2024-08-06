@@ -38,7 +38,6 @@ class Server:
 
     def send_command(self, command, label):
         if self.ser and self.ser.is_open:
-            # while self.received_data != "$getedcommand*":
             self.ser.write(command.encode())
             time.sleep(0.002)
             label.config(text=f"Sent: {command}")

@@ -26,6 +26,8 @@ class ManagementPage:
         self.create_catch_button()
         self.create_point_buttons()
         self.create_point_widgets()
+        self.create_stop_button()
+        self.create_home_detected_button()
 
         self.create_block_widgets("speed", placeX=.05, placeY=.3)
         self.create_block_widgets("position", placeX=.05, placeY=.5)
@@ -64,14 +66,14 @@ class ManagementPage:
                    ).grid(column=2, row=1)
 
     def create_entry(self, frame, axis, type):
-        coords = ["X", "Y", "Z"]
+        coords = ["x", "y", "z", "l"]
         var = tk.StringVar()
         ttk.Entry(frame, textvariable=var).grid(row=int(axis), column=0, sticky=(tk.W, tk.E))
         ttk.Button(frame,
-                   text=f"Send {type.capitalize()} {coords[int(axis) - 1]}",
+                   text=f"Send {type.capitalize()} {coords[int(axis) - 1].upper()}",
                    command=lambda: self.ser.send_command(f"${axis},{type},mm/s,set,{var.get()}*"
                                                          if type == "speed" else
-                                                         f"${axis},goto,mm,{var.get()}*",
+                                                         f"${coords[int(axis) - 1]},goto,mm,{var.get()}*",
                                                          self.sent_data_label)
                    ).grid(row=int(axis), column=2)
         return var
@@ -85,16 +87,23 @@ class ManagementPage:
         pos_x = self.create_entry(frame, "1", type)
         pos_y = self.create_entry(frame, "2", type)
         pos_z = self.create_entry(frame, "3", type)
+        pos_l = self.create_entry(frame, "4", type)
 
         if type == "position":
             ttk.Button(self.page,
                        text=f"Send All",
-                       command=lambda: self.ser.send_command(f"$all,1,{pos_x.get()},2,{pos_y.get()},3,{pos_z.get()}*",
+                       command=lambda: self.ser.send_command(f"$a,goto,mm,{pos_x.get()},{pos_y.get()},{pos_z.get()},{pos_l.get()}*",
                                                              self.sent_data_label)
-                       ).place(relx=placeX + 0.06, rely=placeY + 0.09)
+                       ).place(relx=placeX + 0.03, rely=placeY + 0.1)
+            ttk.Button(self.page,
+                       text=f"Send xyl",
+                       command=lambda: self.ser.send_command(
+                           f"$xyl,goto,mm,{pos_x.get()},{pos_y.get()},{pos_l.get()}*",
+                           self.sent_data_label)
+                       ).place(relx=placeX + 0.09, rely=placeY + 0.1)
 
     def create_home_widgets(self):
-        home_combobox = ttk.Combobox(self.page, values=['ALL', 'X', 'Y', 'Z'], font=("Arial", 13, "bold"))
+        home_combobox = ttk.Combobox(self.page, values=['ALL', 'X', 'Y', 'Z', 'L'], font=("Arial", 13, "bold"))
         home_combobox.place(relx=.8, rely=.875, anchor="sw")
         home_combobox.current(0)
 
@@ -105,20 +114,21 @@ class ManagementPage:
                   ).place(relx=.715, rely=.88, anchor="sw")
 
     def send_home_command(self, type):
-        if type == "X" or type == "ALL":
-            command = f"$1,home,find*"
+        if type == "X":
+            command = f"$x,home,find*"
             self.ser.send_command(command, self.sent_data_label)
-            time.sleep(0.002)
-        if type == "Y" or type == "ALL":
-            command = f"$2,home,find*"
+        if type == "Y":
+            command = f"$y,home,find*"
             self.ser.send_command(command, self.sent_data_label)
-            time.sleep(0.002)
-        if type == "Z" or type == "ALL":
-            command = f"$3,home,find*"
+        if type == "Z":
+            command = f"$z,home,find*"
             self.ser.send_command(command, self.sent_data_label)
-            time.sleep(0.002)
-        if type == "ALL" and self.ser.ser:
-            self.sent_data_label.config(text="Go Home")
+        if type == "L":
+            command = f"$l,home,find*"
+            self.ser.send_command(command, self.sent_data_label)
+        if type == "ALL":
+            command = f"$a,home,find*"
+            self.ser.send_command(command, self.sent_data_label)
 
     def create_other_input(self):
         other_command_label = ttk.Label(self.page, text="Other command", font=("Arial", 16, "bold"))
@@ -131,10 +141,7 @@ class ManagementPage:
                    ).place(relx=.16, rely=.71, anchor="w")
 
     def get_position(self):
-        commands = [f"$1,position,get,mm*", f"$2,position,get,mm*", f"$3,position,get,mm*"]
-        for command in commands:
-            self.ser.send_command(command, self.sent_data_label)
-        self.sent_data_label.config(text="Get position command")
+        self.ser.send_command(f"a,position,get,mm*", self.sent_data_label)
 
     def create_get_position_button(self):
         tk.Button(self.page,
@@ -150,16 +157,24 @@ class ManagementPage:
                   font=("Arial", 12, "bold")
                   ).place(relx=.665, rely=.88, anchor="sw")
 
+    def create_home_detected_button(self):
+        tk.Button(self.page,
+                  text="Home Detected",
+                  command=lambda: self.ser.send_command("$a,home,detected*", self.sent_data_label),
+                  font=("Arial", 12, "bold")
+                  ).place(relx=.665, rely=.83, anchor="sw")
+
+    def create_stop_button(self):
+        tk.Button(self.page,
+                  text="Stop",
+                  command=lambda: self.ser.send_command("$a,stop*", self.sent_data_label),
+                  font=("Arial", 12, "bold")
+                  ).place(relx=.625, rely=.83, anchor="sw")
+
     def auto_loop(self):
         if self.auto_flag:
-            print(self.ser.received_data)
-            if self.ser.received_data == "Next":
-                print(123)
-                self.ser.send_command(
-                    f"$1,{self.apple_list[0][1][0]},2,{self.apple_list[0][1][1]},3,{self.apple_list[0][1][2]}*",
-                    self.sent_data_label)
-                print(f"$1,{self.apple_list[0][1][0]},2,{self.apple_list[0][1][1]},3,{self.apple_list[0][1][2]}*",
-                      self.sent_data_label)
+            if self.ser.received_data == "next":
+                self.ser.send_command(f"$yolo,x,{self.apple_list[0][1][0]},y,{self.apple_list[0][1][1]},z,{self.apple_list[0][1][2]}*", self.sent_data_label)
                 self.ser.received_data = None
             self.page.after(1, self.auto_loop)
 
@@ -168,7 +183,7 @@ class ManagementPage:
             button.config(text="Stop")
             self.auto_flag = True
             self.ser.send_command(
-                f"$1,{self.apple_list[0][1][0]},2,{self.apple_list[0][1][1]},3,{self.apple_list[0][1][2]}*",
+                f"$yolo,x,{self.apple_list[0][1][0]},y,{self.apple_list[0][1][1]},z,{self.apple_list[0][1][2]}*",
                 self.sent_data_label)
             self.auto_loop()
         else:
@@ -186,7 +201,7 @@ class ManagementPage:
         tk.Button(self.page,
                   text="Next",
                   command=lambda: self.ser.send_command(
-                      f"$1,{self.apple_list[0][1][0]},2,{self.apple_list[0][1][1]},3,{self.apple_list[0][1][2]}*",
+                      f"$yolo,x,{self.apple_list[0][1][0]},y,{self.apple_list[0][1][1]},z,{self.apple_list[0][1][2]}*",
                       self.sent_data_label),
                   font=("Arial", 12, "bold")
                   ).place(relx=0.68, rely=0.15)
