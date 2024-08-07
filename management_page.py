@@ -148,14 +148,14 @@ class ManagementPage:
                   text="Get Position MM",
                   command=self.get_position,
                   font=("Arial", 12, "bold")
-                  ).place(relx=.555, rely=.88, anchor="sw")
+                  ).place(relx=.564, rely=.88, anchor="sw")
 
     def create_catch_button(self):
         tk.Button(self.page,
                   text="Catch",
                   command=lambda: self.ser.send_command("open*", self.sent_data_label),
                   font=("Arial", 12, "bold")
-                  ).place(relx=.665, rely=.88, anchor="sw")
+                  ).place(relx=.67, rely=.88, anchor="sw")
 
     def create_home_detected_button(self):
         tk.Button(self.page,
@@ -169,7 +169,7 @@ class ManagementPage:
                   text="Stop",
                   command=lambda: self.ser.send_command("$a,stop*", self.sent_data_label),
                   font=("Arial", 12, "bold")
-                  ).place(relx=.625, rely=.83, anchor="sw")
+                  ).place(relx=.626, rely=.83, anchor="sw")
 
     def auto_loop(self):
         if self.auto_flag:
@@ -196,7 +196,7 @@ class ManagementPage:
                        command=lambda: self.auto_assembly(b1),
                        font=("Arial", 12, "bold")
                        )
-        b1.place(relx=0.72, rely=0.15)
+        b1.place(relx=0.735, rely=0.15)
 
         tk.Button(self.page,
                   text="Next",
@@ -204,7 +204,7 @@ class ManagementPage:
                       f"$yolo,x,{self.apple_list[0][1][0]},y,{self.apple_list[0][1][1]},z,{self.apple_list[0][1][2]}*",
                       self.sent_data_label),
                   font=("Arial", 12, "bold")
-                  ).place(relx=0.68, rely=0.15)
+                  ).place(relx=0.695, rely=0.15)
 
     def create_point_widgets(self):
         self.apple_list = self.camera.apple_list

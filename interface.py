@@ -9,7 +9,10 @@ class Application(Tk):
     def __init__(self):
         super().__init__()
         self.title("Манипулятор")
-        self.geometry("1280x720")
+
+        self.tk.call('tk', 'scaling', 1.5)
+
+        self.state('zoomed')
 
         self.ser = Server()
 
