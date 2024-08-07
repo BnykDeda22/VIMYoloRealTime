@@ -16,6 +16,8 @@ def calculate_image_size(image):
 
 class CameraPage:
     def __init__(self, page, ser):
+        self.new_height = 600
+        self.new_width = 800
         self.camera_label = None
         self.page = page
         self.ser = ser
@@ -29,7 +31,7 @@ class CameraPage:
         self.conf_threshold = tk.DoubleVar(value=0.5)
         self.conf_slider = tk.Scale(self.page, from_=0.0, to=1.0, resolution=0.01, orient='horizontal',
                                     variable=self.conf_threshold, font=("Arial", 12))
-        self.conf_slider.place(relx=.65, rely=.02)
+        self.conf_slider.place(relx=.64, rely=.02)
 
         self.image_type = 'color'
 
@@ -38,18 +40,18 @@ class CameraPage:
 
         self.switch_button = tk.Button(self.page, text="Переключить изображение", command=self.switch_image,
                                        font=("Arial", 12, "bold"), takefocus=False)
-        self.switch_button.place(relx=.4, rely=.8)
+        self.switch_button.place(relx=.748, rely=.04)
         self.start_button = tk.Button(self.page, text="Запустить", command=self.start_camera,
                                       font=("Arial", 12, "bold"), takefocus=False)
-        self.start_button.place(relx=.6, rely=.8)
+        self.start_button.place(relx=.407, rely=.885)
 
-        self.pause_button = tk.Button(self.page, text="Пауза/Возобновить", command=self.pause_camera,
+        self.pause_button = tk.Button(self.page, text="Пауза", command=self.pause_camera,
                                       font=("Arial", 12, "bold"), takefocus=False)
-        self.pause_button.place(relx=.75, rely=.8)
+        self.pause_button.place(relx=.65, rely=.885)
 
         self.stop_button = tk.Button(self.page, text="Остановить", command=self.stop_camera,
                                      font=("Arial", 12, "bold"), takefocus=False)
-        self.stop_button.place(relx=.9, rely=.8)
+        self.stop_button.place(relx=.84, rely=.885)
 
         self.sent_data_label = ttk.Label(self.page, text="Sent: None", font=("Arial", 14, "bold"))
         self.sent_data_label.place(relx=.05, rely=.9, anchor="sw")
@@ -57,7 +59,8 @@ class CameraPage:
         self.received_data_label = ttk.Label(self.page, text="Received: None", font=("Arial", 14, "bold"))
         self.received_data_label.place(relx=.05, rely=.95, anchor="sw")
 
-        self.create_point_widgets()
+        self.create_points_widgets()
+        self.create_point_buttons()
         self.create_block_widgets("position", placeX=.05, placeY=.7)
 
         self.placeholder_image = Image.open("VIM.png")
@@ -72,8 +75,11 @@ class CameraPage:
     def pause_camera(self):
         if self.camera_running:
             self.camera_running = False
+            self.pause_button.config(text="Возобновить")
         else:
             self.camera_running = True
+            self.pause_button.config(text="Пауза")
+            self.update_camera_image()
 
     def stop_camera(self):
         self.camera_running = False
@@ -120,16 +126,49 @@ class CameraPage:
                    ).grid(row=int(axis), column=2)
         return var
 
+    def create_point_buttons(self):
+        b1 = tk.Button(self.page,
+                       text="Auto",
+                       command=lambda: self.auto_assembly(b1),
+                       font=("Arial", 12, "bold")
+                       )
+        b1.place(relx=0.15, rely=0.04)
+
+        tk.Button(self.page,
+                  text="Next",
+                  command=lambda: self.ser.send_command(
+                      f"$yolo,x,{self.apple_list[0][1][0]},y,{self.apple_list[0][1][1]},z,{self.apple_list[0][1][2]}*",
+                      self.sent_data_label),
+                  font=("Arial", 12, "bold")
+                  ).place(relx=0.11, rely=0.04)
+
+    def auto_loop(self):
+        if self.auto_flag:
+            if self.ser.received_data == "next":
+                self.ser.send_command(f"$yolo,x,{self.apple_list[0][1][0]},y,{self.apple_list[0][1][1]},z,{self.apple_list[0][1][2]}*", self.sent_data_label)
+                self.ser.received_data = None
+            self.page.after(1, self.auto_loop)
+
+    def auto_assembly(self, button):
+        if not self.auto_flag:
+            button.config(text="Stop")
+            self.auto_flag = True
+            self.ser.send_command(
+                f"$yolo,x,{self.apple_list[0][1][0]},y,{self.apple_list[0][1][1]},z,{self.apple_list[0][1][2]}*",
+                self.sent_data_label)
+            self.auto_loop()
+        else:
+            button.config(text="Auto")
+            self.auto_flag = False
+
     def display_placeholder_image(self):
-        new_width, new_height = calculate_image_size(self.placeholder_image)
-        resized_image = self.placeholder_image.resize((new_width, new_height), Image.LANCZOS)
+        resized_image = self.placeholder_image.resize((self.new_width, self.new_height), Image.LANCZOS)
         photo = ImageTk.PhotoImage(resized_image)
         self.update_or_create_label(photo)
 
     def display_image(self, image_array):
         image = Image.fromarray(cv2.cvtColor(image_array, cv2.COLOR_BGR2RGB))
-        new_width, new_height = calculate_image_size(image)
-        image = image.resize((new_width, new_height), Image.LANCZOS)
+        image = image.resize((self.new_width, self.new_height), Image.LANCZOS)
         photo = ImageTk.PhotoImage(image)
         self.update_or_create_label(photo)
 
@@ -170,19 +209,13 @@ class CameraPage:
     def switch_image(self):
         self.image_type = 'depth' if self.image_type == 'color' else 'color'
 
-    def create_point_widgets(self):
+    def create_points_widgets(self):
         self.apple_list = self.apple_list
         listbox = tk.Listbox(self.page, height=15, selectmode=tk.SINGLE, width=27, font=('Times', 14))
-        listbox.place(relx=0.1, rely=0.1, anchor='nw')
-
-        scrollbar = ttk.Scrollbar(self.page, orient=tk.VERTICAL, command=listbox.yview)
-        scrollbar.place(relx=0.295, rely=0.1, relheight=0.48, anchor='nw')
-
-        listbox.config(yscrollcommand=scrollbar.set)
-        listbox.delete(0, tk.END)
+        listbox.place(relx=0.05, rely=0.1, anchor='nw')
 
         for i in range(len(self.apple_list)):
             listbox.insert(tk.END,
                            f"Apple {self.apple_list[i][0]}: x:{self.apple_list[i][1][0]}, y:{self.apple_list[i][1][1]}, z:{self.apple_list[i][1][2]}")
-        self.page.after(1000, self.create_point_widgets)
+        self.page.after(1000, self.create_points_widgets)
 
