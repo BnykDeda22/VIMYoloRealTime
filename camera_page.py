@@ -62,6 +62,7 @@ class CameraPage:
         self.create_points_widgets()
         self.create_point_buttons()
         self.create_block_widgets("position", placeX=.05, placeY=.7)
+        self.create_other_input()
 
         self.placeholder_image = Image.open("VIM.png")
         self.display_placeholder_image()
@@ -87,6 +88,16 @@ class CameraPage:
             self.cap.release()
         self.cap = None
         self.display_placeholder_image()
+
+    def create_other_input(self):
+        other_command_label = ttk.Label(self.page, text="Other command", font=("Arial", 16, "bold"))
+        other_command_label.place(relx=.25, rely=.63, anchor="w")
+        other_var = tk.StringVar()
+        ttk.Entry(self.page, textvariable=other_var).place(relx=.263, rely=.67, anchor="w")
+        ttk.Button(self.page,
+                   text=f"Send command",
+                   command=lambda: self.ser.send_command(other_var.get(), self.sent_data_label)
+                   ).place(relx=.278, rely=.71, anchor="w")
 
     def create_block_widgets(self, type, placeX, placeY):
         frame = ttk.Frame(self.page, padding="10")
