@@ -27,6 +27,7 @@ class ManagementPage:
         self.create_point_buttons()
         self.create_point_widgets()
         self.create_stop_button()
+        self.create_open_left_button()
         self.create_home_detected_button()
 
         self.create_block_widgets("speed", placeX=.05, placeY=.3)
@@ -149,6 +150,13 @@ class ManagementPage:
                   command=self.get_position,
                   font=("Arial", 12, "bold")
                   ).place(relx=.564, rely=.88, anchor="sw")
+
+    def create_open_left_button(self):
+        tk.Button(self.page,
+                  text="Open Left",
+                  command=lambda: self.ser.send_command("$open left*", self.sent_data_label),
+                  font=("Arial", 12, "bold")
+                  ).place(relx=.56, rely=.83, anchor="sw")
 
     def create_catch_button(self):
         tk.Button(self.page,
