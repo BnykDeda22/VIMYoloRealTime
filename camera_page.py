@@ -1,21 +1,17 @@
 import cv2
 import tkinter as tk
 from tkinter import ttk
+
+import numpy as np
 from PIL import Image, ImageTk
 
 from camera import Camera
 from detection import ODModel
 
 
-def calculate_image_size(image):
-    scale_factor = 0.9
-    new_width = int(image.width * scale_factor)
-    new_height = int(image.height * scale_factor)
-    return new_width, new_height
-
-
 class CameraPage:
     def __init__(self, page, ser):
+        self.rotation_angle = 0
         self.new_height = 600
         self.new_width = 800
         self.camera_label = None
@@ -41,17 +37,20 @@ class CameraPage:
         self.switch_button = tk.Button(self.page, text="Переключить изображение", command=self.switch_image,
                                        font=("Arial", 12, "bold"), takefocus=False)
         self.switch_button.place(relx=.748, rely=.04)
+        self.rotation_button = tk.Button(self.page, text="Поворот на 90°", command=self.turn_image,
+                                         font=("Arial", 12, "bold"), takefocus=False)
+        self.rotation_button.place(relx=.407, rely=.04)
         self.start_button = tk.Button(self.page, text="Запустить", command=self.start_camera,
                                       font=("Arial", 12, "bold"), takefocus=False)
-        self.start_button.place(relx=.407, rely=.885)
+        self.start_button.place(relx=.278, rely=.8, anchor="w")
 
         self.pause_button = tk.Button(self.page, text="Пауза", command=self.pause_camera,
                                       font=("Arial", 12, "bold"), takefocus=False)
-        self.pause_button.place(relx=.65, rely=.885)
+        self.pause_button.place(relx=.278, rely=.85, anchor="w")
 
         self.stop_button = tk.Button(self.page, text="Остановить", command=self.stop_camera,
                                      font=("Arial", 12, "bold"), takefocus=False)
-        self.stop_button.place(relx=.84, rely=.885)
+        self.stop_button.place(relx=.278, rely=.90, anchor="w")
 
         self.sent_data_label = ttk.Label(self.page, text="Sent: None", font=("Arial", 14, "bold"))
         self.sent_data_label.place(relx=.05, rely=.9, anchor="sw")
@@ -66,6 +65,13 @@ class CameraPage:
 
         self.placeholder_image = Image.open("VIM.png")
         self.display_placeholder_image()
+
+    def turn_image(self):
+        self.rotation_angle = (self.rotation_angle + 90) % 360
+        if self.rotation_angle in [90, 270]:
+            self.new_width, self.new_height = self.new_height, self.new_width
+        else:
+            self.new_width, self.new_height = 800, 600
 
     def start_camera(self):
         if not self.camera_running:
@@ -190,8 +196,23 @@ class CameraPage:
         self.apple_list = []
         color_image, depth_image = self.cap.get_frame_stream()
         image_to_display = color_image if self.image_type == 'color' else depth_image
-        processed_image = self.process_image(color_image, image_to_display)
+
+        # Rotate the image using PIL and adjust dimensions
+        image_pil = Image.fromarray(cv2.cvtColor(image_to_display, cv2.COLOR_BGR2RGB))
+        image_pil = image_pil.rotate(self.rotation_angle, expand=True)
+        image_to_display = cv2.cvtColor(np.array(image_pil), cv2.COLOR_RGB2BGR)
+
+        # Also rotate the color_image for processing
+        color_image_pil = Image.fromarray(cv2.cvtColor(color_image, cv2.COLOR_BGR2RGB))
+        color_image_pil = color_image_pil.rotate(self.rotation_angle, expand=True)
+        color_image_rotated = cv2.cvtColor(np.array(color_image_pil), cv2.COLOR_RGB2BGR)
+
+        # Process the rotated image
+        processed_image = self.process_image(color_image_rotated, image_to_display)
+
+        # Display the processed image
         self.display_image(processed_image)
+
         self.apple_list = sorted(self.apple_list, key=lambda x: x[1][1])
         self.page.after(100, self.update_camera_image)
 
@@ -209,6 +230,13 @@ class CameraPage:
             x1, y1, x2, y2 = bbox
 
             cx, cy = (x1 + x2) // 2, (y1 + y2) // 2
+            if self.rotation_angle == 90:
+                cx, cy = 640 - cy, cx
+            elif self.rotation_angle == 180:
+                cx, cy = 640 - cx, 480 - cy
+            elif self.rotation_angle == 270:
+                cx, cy = cy, 480 - cx
+
             distance, coordinates = self.cap.get_distance_and_coordinate_point(cx, cy)
             x, y, z = coordinates
             x, y, z = int(x), int(y), int(z)
