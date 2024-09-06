@@ -213,7 +213,7 @@ class CameraPage:
         # Display the processed image
         self.display_image(processed_image)
 
-        self.apple_list = sorted(self.apple_list, key=lambda x: x[1][1])
+        self.apple_list = sorted(self.apple_list, key=lambda item: (-item[1][1], item[1][0]))
         self.page.after(100, self.update_camera_image)
 
     def update_or_create_label(self, photo):
@@ -240,9 +240,14 @@ class CameraPage:
             distance, coordinates = self.cap.get_distance_and_coordinate_point(cx, cy)
             x, y, z = coordinates
             x, y, z = int(x), int(y), int(z)
-            self.apple_list.append((number, (x, y, z)))
-            cv2.rectangle(display_image, (x1, y1), (x2, y2), (255, 255, 255), 2)
-            cv2.putText(display_image, f"Apple {number} {score:.2}", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+            if 0 <= x <= 1000 and 0 <= y <= 1600 and 0 <= z <= 750:
+                self.apple_list.append((number, (x, y, z)))
+                color = (255, 255, 255)
+            else:
+                color = (0, 0, 255)
+                self.apple_list.append((number, (x, y, z)))
+            cv2.rectangle(display_image, (x1, y1), (x2, y2), color, 2)
+            cv2.putText(display_image, f"Apple {number} {score:.2}", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
         return display_image
 
     def switch_image(self):
