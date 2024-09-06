@@ -181,7 +181,7 @@ class ManagementPage:
 
     def auto_loop(self):
         if self.auto_flag:
-            if self.ser.received_data == "next":
+            if self.ser.received_data == "$next*":
                 self.ser.send_command(f"$yolo,x,{self.apple_list[0][1][0]},y,{self.apple_list[0][1][1]},z,{self.apple_list[0][1][2]}*", self.sent_data_label)
                 self.ser.received_data = None
             self.page.after(1, self.auto_loop)
