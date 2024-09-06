@@ -245,7 +245,6 @@ class CameraPage:
                 color = (255, 255, 255)
             else:
                 color = (0, 0, 255)
-                self.apple_list.append((number, (x, y, z)))
             cv2.rectangle(display_image, (x1, y1), (x2, y2), color, 2)
             cv2.putText(display_image, f"Apple {number} {score:.2}", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
         return display_image
