@@ -2,7 +2,38 @@ import pyrealsense2 as rs
 import numpy as np
 import cv2
 
+def convert_coordinates2(x1, y1, z1):
+    # Step 1: Rotation about y-axis by -15 degrees
+    thetax_rad = np.radians(43)  # Convert to radians
+    Rx = np.array([
+        [1, 0, 0],
+        [0, np.cos(thetax_rad), -np.sin(thetax_rad)],
+        [0, np.sin(thetax_rad), np.cos(thetax_rad)],
 
+    ])
+
+    # Step 2: Rotation about z-axis by 90 degrees
+    theta_z = np.radians(-90)  # Convert to radians
+    Rz = np.array([
+        [np.cos(theta_z), -np.sin(theta_z), 0],
+        [np.sin(theta_z), np.cos(theta_z), 0],
+        [0, 0, 1]
+    ])
+
+    # Original point in s1
+    p1 = np.array([x1, y1, z1])
+
+    # Apply the first rotation (around y1)
+    p2 = Rx.dot(p1)
+
+    # Apply the second rotation (around z2)
+    p3 = Rz.dot(p2)
+
+    # Step 3: Translation to p3 (final system se)
+    translation = np.array([1450.0/1000, 900.0/1000, -650.0/1000])
+    p_se = p3 + translation
+
+    return p_se[0], p_se[1], p_se[2]
 def convert_coordinates(x2, y2, z2):
     xx = True
 
@@ -105,7 +136,7 @@ class Camera:
         distance = self.depth_frame.get_distance(x, y)
         x, y, z = rs.rs2_deproject_pixel_to_point(self.depth_intrinsic, [x, y], distance)
         distance_mm = round(distance * 1000)
-        x, y, z = convert_coordinates(x, y, z)
+        x, y, z = convert_coordinates2(x, y, z)
         x_mm, y_mm, z_mm = round(x * 1000), round(y * 1000), round(z * 1000)
         return distance_mm, (x_mm, y_mm, z_mm)
 
