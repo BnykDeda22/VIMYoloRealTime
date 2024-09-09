@@ -19,10 +19,10 @@ class CameraPage:
         self.ser = ser
         self.cap = None
         self.camera_running = False
-
+        self.auto_flag = False
         self.apple_list = []
 
-        self.my_model = ODModel(path_to_weights=r"last_apples.pt")
+        self.my_model = ODModel(path_to_weights=r"apple_michnevo.pt")
 
         self.conf_threshold = tk.DoubleVar(value=0.5)
         self.conf_slider = tk.Scale(self.page, from_=0.0, to=1.0, resolution=0.01, orient='horizontal',
@@ -162,7 +162,9 @@ class CameraPage:
     def auto_loop(self):
         if self.auto_flag:
             if self.ser.received_data == "next":
-                self.ser.send_command(f"$yolo,x,{self.apple_list[0][1][0]},y,{self.apple_list[0][1][1]},z,{self.apple_list[0][1][2]}*", self.sent_data_label)
+                self.ser.send_command(
+                    f"$yolo,x,{self.apple_list[0][1][0]},y,{self.apple_list[0][1][1]},z,{self.apple_list[0][1][2]}*",
+                    self.sent_data_label)
                 self.ser.received_data = None
             self.page.after(1, self.auto_loop)
 
@@ -246,7 +248,8 @@ class CameraPage:
             else:
                 color = (0, 0, 255)
             cv2.rectangle(display_image, (x1, y1), (x2, y2), color, 2)
-            cv2.putText(display_image, f"Apple {number} {score:.2}", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
+            cv2.putText(display_image, f"Apple {number} {score:.2}", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.7,
+                        color, 2)
         return display_image
 
     def switch_image(self):
@@ -261,4 +264,3 @@ class CameraPage:
             listbox.insert(tk.END,
                            f"Apple {self.apple_list[i][0]}: x:{self.apple_list[i][1][0]}, y:{self.apple_list[i][1][1]}, z:{self.apple_list[i][1][2]}")
         self.page.after(1000, self.create_points_widgets)
-
