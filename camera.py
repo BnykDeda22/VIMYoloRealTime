@@ -35,7 +35,7 @@ def convert_coordinates2(x1, y1, z1):
 
     return p_se[0], p_se[1], p_se[2]
 def convert_coordinates(x2, y2, z2):
-    xx = True
+    xx = False
 
     if xx:
         theta1 = 0

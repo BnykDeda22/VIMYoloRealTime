@@ -19,10 +19,10 @@ class CameraPage:
         self.ser = ser
         self.cap = None
         self.camera_running = False
-
+        self.auto_flag= False
         self.apple_list = []
 
-        self.my_model = ODModel(path_to_weights=r"last_apples.pt")
+        self.my_model = ODModel(path_to_weights=r"apple_michnevo (1).pt")
 
         self.conf_threshold = tk.DoubleVar(value=0.5)
         self.conf_slider = tk.Scale(self.page, from_=0.0, to=1.0, resolution=0.01, orient='horizontal',

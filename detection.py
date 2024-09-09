@@ -4,7 +4,7 @@ from ultralytics import YOLO
 
 class ODModel:
     def __init__(self, path_to_weights=r"weights/apples.pt"):
-        self.model = YOLO(path_to_weights)
+        self.model = YOLO(path_to_weights).to('cuda:0')
         self.classes = self.model.names
 
     def predict(self, frame, imgsz=960, conf=0.26, nms=True, classes=None, device=None):
