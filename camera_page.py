@@ -244,12 +244,13 @@ class CameraPage:
             x, y, z = int(x), int(y), int(z)
             if 0 <= x <= 1000 and 0 <= y <= 1600 and 0 <= z <= 750:
                 self.apple_list.append((number, (x, y, z)))
-                color = (255, 255, 255)
+                color = (68, 255, 0)
+                cv2.putText(display_image, f"{number} {score:.2}", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.4,
+                            color, 2)
             else:
                 color = (0, 0, 255)
             cv2.rectangle(display_image, (x1, y1), (x2, y2), color, 2)
-            cv2.putText(display_image, f"Apple {number} {score:.2}", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.7,
-                        color, 2)
+
         return display_image
 
     def switch_image(self):
