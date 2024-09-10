@@ -1,3 +1,5 @@
+import copy
+
 import cv2
 import tkinter as tk
 from tkinter import ttk
@@ -20,6 +22,7 @@ class CameraPage:
         self.cap = None
         self.camera_running = False
         self.auto_flag = False
+        self.freeze_apple_list = None
         self.apple_list = []
 
         self.my_model = ODModel(path_to_weights=r"apple_michnevo.pt")
@@ -144,13 +147,6 @@ class CameraPage:
         return var
 
     def create_point_buttons(self):
-        b1 = tk.Button(self.page,
-                       text="Auto",
-                       command=lambda: self.auto_assembly(b1),
-                       font=("Arial", 12, "bold")
-                       )
-        b1.place(relx=0.15, rely=0.04)
-
         tk.Button(self.page,
                   text="Next",
                   command=lambda: self.ser.send_command(
@@ -159,12 +155,24 @@ class CameraPage:
                   font=("Arial", 12, "bold")
                   ).place(relx=0.11, rely=0.04)
 
+        b1 = tk.Button(self.page,
+                       text="Auto",
+                       command=lambda: self.auto_assembly(b1),
+                       font=("Arial", 12, "bold")
+                       )
+        b1.place(relx=0.15, rely=0.04)
+
     def auto_loop(self):
         if self.auto_flag:
             if self.ser.received_data == "next":
                 self.ser.send_command(
-                    f"$yolo,x,{self.apple_list[0][1][0]},y,{self.apple_list[0][1][1]},z,{self.apple_list[0][1][2]}*",
+                    f"$yolo,x,{self.freeze_apple_list[self.iter][1][0]},y,{self.freeze_apple_list[self.iter][1][1]},z,{self.freeze_apple_list[self.iter][1][2]}*",
                     self.sent_data_label)
+                if self.iter < len(self.freeze_apple_list):
+                    self.iter += 1
+                else:
+                    self.freeze_apple_list = copy.deepcopy(self.apple_list)
+                    self.iter = 0
                 self.ser.received_data = None
             self.page.after(1, self.auto_loop)
 
@@ -175,10 +183,13 @@ class CameraPage:
             self.ser.send_command(
                 f"$yolo,x,{self.apple_list[0][1][0]},y,{self.apple_list[0][1][1]},z,{self.apple_list[0][1][2]}*",
                 self.sent_data_label)
+            self.freeze_apple_list = copy.deepcopy(self.apple_list)
+            self.iter = 1
             self.auto_loop()
         else:
             button.config(text="Auto")
             self.auto_flag = False
+            self.freeze_apple_list = None
 
     def display_placeholder_image(self):
         resized_image = self.placeholder_image.resize((self.new_width, self.new_height), Image.LANCZOS)
