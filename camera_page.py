@@ -147,28 +147,37 @@ class CameraPage:
         return var
 
     def create_point_buttons(self):
+        button_font = ("Arial", 12, "bold")
+
         tk.Button(self.page,
                   text="Next",
-                  command=lambda: self.ser.send_command(
-                      f"$yolo,x,{self.apple_list[0][1][0]},y,{self.apple_list[0][1][1]},z,{self.apple_list[0][1][2]}*",
-                      self.sent_data_label),
-                  font=("Arial", 12, "bold")
+                  command=self.send_next_command,
+                  font=button_font
                   ).place(relx=0.11, rely=0.04)
 
-        b1 = tk.Button(self.page,
-                       text="Auto",
-                       command=lambda: self.auto_assembly(b1),
-                       font=("Arial", 12, "bold")
-                       )
-        b1.place(relx=0.15, rely=0.04)
+        self.auto_button = tk.Button(self.page,
+                                     text="Auto",
+                                     command=self.toggle_auto_mode,
+                                     font=button_font
+                                     )
+        self.auto_button.place(relx=0.15, rely=0.04)
+
+    def send_next_command(self):
+        if len(self.apple_list) > 0:
+            self.ser.send_command(
+                f"$yolo,x,{self.apple_list[0][1][0]},y,{self.apple_list[0][1][1]},z,{self.apple_list[0][1][2]}*",
+                self.sent_data_label
+            )
 
     def auto_loop(self):
         if self.auto_flag:
             if self.ser.received_data == "next":
-                self.ser.send_command(
-                    f"$yolo,x,{self.freeze_apple_list[self.iter][1][0]},y,{self.freeze_apple_list[self.iter][1][1]},z,{self.freeze_apple_list[self.iter][1][2]}*",
-                    self.sent_data_label)
                 if self.iter < len(self.freeze_apple_list):
+                    apple = self.freeze_apple_list[self.iter][1]
+                    self.ser.send_command(
+                        f"$yolo,x,{apple[0]},y,{apple[1]},z,{apple[2]}*",
+                        self.sent_data_label
+                    )
                     self.iter += 1
                 else:
                     self.freeze_apple_list = copy.deepcopy(self.apple_list)
@@ -176,18 +185,15 @@ class CameraPage:
                 self.ser.received_data = None
             self.page.after(1, self.auto_loop)
 
-    def auto_assembly(self, button):
+    def toggle_auto_mode(self):
         if not self.auto_flag:
-            button.config(text="Stop")
+            self.auto_button.config(text="Stop")
             self.auto_flag = True
-            self.ser.send_command(
-                f"$yolo,x,{self.apple_list[0][1][0]},y,{self.apple_list[0][1][1]},z,{self.apple_list[0][1][2]}*",
-                self.sent_data_label)
+            self.iter = 0
             self.freeze_apple_list = copy.deepcopy(self.apple_list)
-            self.iter = 1
             self.auto_loop()
         else:
-            button.config(text="Auto")
+            self.auto_button.config(text="Auto")
             self.auto_flag = False
             self.freeze_apple_list = None
 
